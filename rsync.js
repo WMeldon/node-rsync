@@ -71,6 +71,7 @@ function Rsync(config) {
 
     // Debug parameter
     this._debug = hasOP(config, 'debug') ? config.debug : false;
+    this._cwd = hasOP(config, 'cwd') ? config.cwd : null;
 }
 
 /**
@@ -442,11 +443,11 @@ Rsync.prototype.execute = function(callback, stdoutHandler, stderrHandler) {
     var cmdProc;
     if ('win32' === process.platform) {
         cmdProc = spawn('cmd.exe', ['/s', '/c', '"' + this.command() + '"'],
-                        { stdio: 'pipe', windowsVerbatimArguments: true });
+                        { stdio: 'pipe', windowsVerbatimArguments: true, cwd: this._cwd });
     }
     else {
         cmdProc = spawn('/bin/sh', ['-c', this.command()],
-                        { stdio: 'pipe' });
+                        { stdio: 'pipe', cwd: this._cwd });
     }
 
     // Capture stdout and stderr if there are output handlers configured
@@ -487,6 +488,19 @@ Rsync.prototype.execute = function(callback, stdoutHandler, stderrHandler) {
  * @return {Rsync|Boolean}
  */
 createValueAccessor('debug');
+
+/**
+ * Get or set the cwd property.
+ *
+ * Allows a working directory to be specified for execution
+ *
+ * @function
+ * @name cwd
+ * @memberOf Rsync.prototype
+ * @param {String} path to the current working directory (optional)
+ * @return {Rsync|String}
+ */
+createValueAccessor('cwd');
 
 /**
  * Get or set the executable to use for the rsync process.
