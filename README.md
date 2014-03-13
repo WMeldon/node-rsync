@@ -310,6 +310,10 @@ rsync.include(['/a/file', '/b/file']);
 
 Get or set the debug flag. This is only used internally and must be a Boolean to set or unset.
 
+### cwd(path)
+
+Get or set the current working directory where the command will be executed.
+
 ## static methods
 
 ### build
