@@ -338,9 +338,10 @@ Rsync.prototype.args = function() {
     // Long options have a value but can also be a single letter.
     var short = [];
     var long  = [];
-
+    console.log(this._options);
     // Split long and short options
     for (var key in this._options) {
+        console.log(key);
         if (hasOP(this._options, key)) {
             var value = this._options[key];
             var noval = (value === null || value === undefined);
@@ -350,7 +351,12 @@ Rsync.prototype.args = function() {
                 short.push(key);
             }
             else {
-                long.push(buildOption(key, value));
+                if (~this._rawOptions.indexOf(key)) {
+                  long.push(buildOption(key, value, false));
+                }
+                else {
+                  long.push(buildOption(key, value));
+                }
             }
 
         }
@@ -562,6 +568,32 @@ createListAccessor('source', '_sources');
 exposeLongOption('rsh', 'shell');
 
 /**
+ * Set the output format
+ * See `log format` http://rsync.samba.org/ftp/rsync/rsyncd.conf.html
+ *
+ * @function
+ * @name format
+ * @memberOf Rsync.prototype
+ * @param {String} format the desired output format
+ * @return {Rsync}
+ */
+exposeLongOption('out-format', 'format');
+
+/**
+ * Set the info flag for "fine-grained informational verbosity"
+ * `rsync --info=help` for all options
+ *
+ * This option must not be quoted so it is white listed from escaping.
+ *
+ * @function
+ * @name information
+ * @memberOf Rsync.prototype
+ * @param {String} information the information params to use
+ * @return {Rsync}
+ */
+exposeLongOption('info', 'information', true);
+
+/**
  * Set the delete flag.
  *
  * This is the same as setting the `--delete` commandline flag.
@@ -733,8 +765,14 @@ function exposeShortOption(option, name) {
  * @param {String} option   The option to expose
  * @param {String} name     An optional alternative name for the option.
  */
-function exposeLongOption(option, name) {
+function exposeLongOption(option, name, raw) {
     name = name || option;
+    raw = (typeof raw === 'boolean') ? raw : false;
+
+
+    if(raw) {
+        addToRawWhitelist(option);
+    }
 
     Rsync.prototype[name] = function(value) {
         // When not arguments are passed in assume the options
@@ -746,6 +784,14 @@ function exposeLongOption(option, name) {
     };
 }
 
+function addToRawWhitelist(name) {
+    if(!isArray(Rsync.prototype._rawOptions)) {
+        Rsync.prototype._rawOptions = [];
+    }
+
+    Rsync.prototype._rawOptions.push(name);
+}
+
 /**
  * Build an option for use in a shell command.
  * @param {String} name
@@ -755,7 +801,7 @@ function exposeLongOption(option, name) {
  */
 function buildOption(name, value, escape) {
     // Make sure the escape argument is a Boolean
-    escape = (typeof esacpe === 'boolean') ? escape : true;
+    escape = (typeof escape === 'boolean') ? escape : true;
 
     // Detect single option key
     var single = (name.length === 1) ? true : false;
